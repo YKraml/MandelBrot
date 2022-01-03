@@ -14,18 +14,18 @@ public class DrawPanel extends MyPanel {
     private static final Color BACKGROUND_COLOR = Color.WHITE;
 
     private final Graph _graph;
-    private final BufferedImage _image;
+    private BufferedImage _image;
     private Thread _drawThread;
 
     public DrawPanel(Graph graph) {
         _graph = graph;
-        _image = new BufferedImage(Settings.getWIDTH(), Settings.getHEIGHT(), BufferedImage.TYPE_INT_RGB);
+        _image = new BufferedImage(Settings.getImageWidth(), Settings.getImageHeight(), BufferedImage.TYPE_INT_RGB);
     }
 
     @Override
     protected void init() {
         Dimension dimension = new Dimension();
-        dimension.setSize(Settings.getWIDTH(), Settings.getHEIGHT());
+        dimension.setSize(Settings.getImageWidth(), Settings.getImageHeight());
         this.setPreferredSize(dimension);
         this.setSize(dimension);
         this.setBackground(BACKGROUND_COLOR);
@@ -42,6 +42,10 @@ public class DrawPanel extends MyPanel {
                 _drawThread.interrupt();
             }
 
+            boolean sizeChanged = Settings.getImageWidth() != _image.getWidth() || Settings.getImageHeight() != _image.getHeight();
+            if (sizeChanged) {
+                _image = new BufferedImage(Settings.getImageWidth(), Settings.getImageHeight(), BufferedImage.TYPE_INT_RGB);
+            }
             _drawThread = new Thread(() -> _graph.calcImage(_image, Settings.getZoomX(), Settings.getZoomY(), Settings.getWorldXOffset(), Settings.getWorldYOffset()));
             _drawThread.start();
         }

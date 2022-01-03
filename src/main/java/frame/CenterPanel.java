@@ -25,7 +25,7 @@ public class CenterPanel extends MyPanel {
         drawPanel.addMouseWheelListener(mouseAdapter);
 
         JScrollPane scrollPane = new JScrollPane(drawPanel);
-        scrollPane.setPreferredSize(new Dimension(700, 500));
+        //scrollPane.setPreferredSize(new Dimension(700, 500));
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         this.add(scrollPane);

@@ -20,8 +20,24 @@ public class MyMath {
         );
     }
 
-    public static String bigDeziToString(BigDecimal bigDecimal) {
-        return String.format("%6.3e", bigDecimal.doubleValue());
+    public static <K extends Number> String formatNumber(K number) {
+
+        boolean numberIsLarge = number.doubleValue() > Math.pow(10, 6);
+        boolean numberIsInt = number.doubleValue() % 1 == 0;
+
+        String formattedNumber = String.valueOf(number);
+
+        if (numberIsLarge && numberIsInt) {
+            formattedNumber = String.format("%e", number.doubleValue());
+        } else if (!numberIsLarge && numberIsInt) {
+            formattedNumber = String.format("%.0f", number.doubleValue());
+        } else if (numberIsLarge && !numberIsInt) {
+            formattedNumber = String.format("%.3e", number.doubleValue());
+        } else if (!numberIsLarge && !numberIsInt) {
+            formattedNumber = String.format("%.3f", number.doubleValue());
+        }
+
+        return formattedNumber.replace(",", ".");
     }
 
     public static MyPoint calcWorldToScreen(MyPoint worldPoint, BigDecimal worldXOffset, BigDecimal worldYOffset, BigDecimal zoomX, BigDecimal zoomY) {

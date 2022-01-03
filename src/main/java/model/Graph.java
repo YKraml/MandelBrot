@@ -9,7 +9,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -40,7 +39,7 @@ public class Graph {
     private int getDepthFrom(ImaginaryNumber startNumber, ImaginaryNumber c) {
 
         ImaginaryNumber current = startNumber;
-        for (int k = 0; k < Settings.getMaxDepth(); k++) {
+        for (int k = 0; k < Settings.getMaxRecursionDepth(); k++) {
             current = MyMath.add(MyMath.mult(current, current), c);
 
             if (current.getLength().doubleValue() < Math.pow(10, -10)) {
@@ -65,12 +64,12 @@ public class Graph {
         AtomicBoolean finishedDrawing = new AtomicBoolean(true);
 
         Set<Point> bigPixels = new HashSet<>();
-        for (int i = 0; i < image.getWidth() / Settings.getRATIO() + 1; i++) {
+        for (int i = 0; i < image.getWidth() / Settings.getBigPixelSize() + 1; i++) {
             if (Settings.isChanged()) {
                 return;
             }
-            for (int j = 0; j < image.getHeight() / Settings.getRATIO() + 1; j++) {
-                bigPixels.add(new Point(i * Settings.getRATIO(), j * Settings.getRATIO()));
+            for (int j = 0; j < image.getHeight() / Settings.getBigPixelSize() + 1; j++) {
+                bigPixels.add(new Point(i * Settings.getBigPixelSize(), j * Settings.getBigPixelSize()));
             }
         }
 
@@ -81,11 +80,11 @@ public class Graph {
                 return;
             }
 
-            MyPoint worldPoint = MyMath.calcScreenToWorld(new MyPoint(screenPoint.x + Settings.getRATIO() * 0.5, screenPoint.y+ Settings.getRATIO() * 0.5));
+            MyPoint worldPoint = MyMath.calcScreenToWorld(new MyPoint(screenPoint.x + Settings.getBigPixelSize() * 0.5, screenPoint.y+ Settings.getBigPixelSize() * 0.5));
             Color color = Settings.isCVariable() ? getColorFrom(worldPoint.toImaginaryNumber(), Settings.getNonVariable()) : getColorFrom(Settings.getNonVariable(), worldPoint.toImaginaryNumber());
 
-            for (int i = 0; i < Settings.getRATIO(); i++) {
-                for (int j = 0; j < Settings.getRATIO(); j++) {
+            for (int i = 0; i < Settings.getBigPixelSize(); i++) {
+                for (int j = 0; j < Settings.getBigPixelSize(); j++) {
                     int pixelX = screenPoint.x + i;
                     int pixelY = screenPoint.y + j;
                     if (pixelX < image.getWidth() && pixelY < image.getHeight() && pixelX >= 0 && pixelY >= 0) {
@@ -98,9 +97,9 @@ public class Graph {
         //Finde BigPixels, die neu gemalt werden müssen.
         Set<Point> bigPixelsToBeRedrawn = bigPixels.stream().filter(screenPoint -> {
             Point[] bigPixelNeighbors = new Point[]{
-                    new Point(screenPoint.x - Settings.getRATIO(), screenPoint.y - Settings.getRATIO()), new Point(screenPoint.x, screenPoint.y - Settings.getRATIO()), new Point(screenPoint.x + Settings.getRATIO(), screenPoint.y - Settings.getRATIO()),
-                    new Point(screenPoint.x - Settings.getRATIO(), screenPoint.y), new Point(screenPoint.x, screenPoint.y), new Point(screenPoint.x + Settings.getRATIO(), screenPoint.y),
-                    new Point(screenPoint.x - Settings.getRATIO(), screenPoint.y + Settings.getRATIO()), new Point(screenPoint.x, screenPoint.y + Settings.getRATIO()), new Point(screenPoint.x + Settings.getRATIO(), screenPoint.y + Settings.getRATIO())
+                    new Point(screenPoint.x - Settings.getBigPixelSize(), screenPoint.y - Settings.getBigPixelSize()), new Point(screenPoint.x, screenPoint.y - Settings.getBigPixelSize()), new Point(screenPoint.x + Settings.getBigPixelSize(), screenPoint.y - Settings.getBigPixelSize()),
+                    new Point(screenPoint.x - Settings.getBigPixelSize(), screenPoint.y), new Point(screenPoint.x, screenPoint.y), new Point(screenPoint.x + Settings.getBigPixelSize(), screenPoint.y),
+                    new Point(screenPoint.x - Settings.getBigPixelSize(), screenPoint.y + Settings.getBigPixelSize()), new Point(screenPoint.x, screenPoint.y + Settings.getBigPixelSize()), new Point(screenPoint.x + Settings.getBigPixelSize(), screenPoint.y + Settings.getBigPixelSize())
             };
 
             Set<Integer> neighboringColors = new LinkedHashSet<>();
@@ -128,8 +127,8 @@ public class Graph {
                 return;
             }
 
-            for (int k = 0; k < Settings.getRATIO() * Settings.getRATIO(); k++) {
-                Point screenPoint = new Point(bigPixel.x + k / Settings.getRATIO(), bigPixel.y + k % Settings.getRATIO());
+            for (int k = 0; k < Settings.getBigPixelSize() * Settings.getBigPixelSize(); k++) {
+                Point screenPoint = new Point(bigPixel.x + k / Settings.getBigPixelSize(), bigPixel.y + k % Settings.getBigPixelSize());
                 MyPoint worldPoint = MyMath.calcScreenToWorld(MyPoint.valueOf(screenPoint));
                 Color color = Settings.isCVariable() ? getColorFrom(worldPoint.toImaginaryNumber(), Settings.getNonVariable()) : getColorFrom(Settings.getNonVariable(), worldPoint.toImaginaryNumber());
 
@@ -157,15 +156,15 @@ public class Graph {
     private void saveImage(BufferedImage bufferedImage) {
         new Thread(() -> {
             File outputfile = new File("images/mandelbrot_"
-                    + Settings.getWIDTH()
+                    + Settings.getImageWidth()
                     + "x"
-                    + Settings.getHEIGHT()
+                    + Settings.getImageHeight()
                     + "_"
-                    + MyMath.bigDeziToString(Settings.getWorldXOffset())
+                    + MyMath.formatNumber(Settings.getWorldXOffset())
                     + "_"
-                    + MyMath.bigDeziToString(Settings.getWorldYOffset())
+                    + MyMath.formatNumber(Settings.getWorldYOffset())
                     + "_"
-                    + MyMath.bigDeziToString(Settings.getZoomX())
+                    + MyMath.formatNumber(Settings.getZoomX())
                     + "_"
                     + Settings.isCVariable()
                     + "_"

@@ -1,6 +1,7 @@
 package main.java.frame;
 
 import main.java.main.Settings;
+import main.java.main.Wrapper;
 import main.java.model.ImaginaryNumber;
 import main.java.model.MyMath;
 import main.java.runnables.MyLoopRunnable;
@@ -10,18 +11,17 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.*;
 
 public class WestPanel extends MyPanel {
 
-    private final List<JLabel> labels;
-    private final List<JTextField> fields;
-
+    private final List<Wrapper> wrappers;
+    private final Map<JTextField, Wrapper> coupledPairs;
 
     public WestPanel() {
-        labels = new ArrayList<>();
-        fields = new ArrayList<>();
+        wrappers = Collections.synchronizedList(new ArrayList<>());
+        coupledPairs = Collections.synchronizedMap(new HashMap<>());
     }
 
     @Override
@@ -30,34 +30,47 @@ public class WestPanel extends MyPanel {
         setBorder(new TitledBorder("Settings"));
         setBackground(Color.white);
 
-        labels.add(new JLabel("Precision"));
-        labels.add(new JLabel("Width"));
-        labels.add(new JLabel("Height"));
-        labels.add(new JLabel("Max Depth"));
-        labels.add(new JLabel("Mouse X Pos"));
-        labels.add(new JLabel("MOUSE Y Pos"));
-        labels.add(new JLabel("World X Offset"));
-        labels.add(new JLabel("World Y Offset"));
-        labels.add(new JLabel("Zoom X"));
-        labels.add(new JLabel("Zoom Y"));
+        wrappers.add(Settings.getImageWidthWrapper());
+        wrappers.add(Settings.getImageHeightWrapper());
+        wrappers.add(Settings.getPrecisionWrapper());
+        wrappers.add(Settings.getMaxRecursionDepthWrapper());
+        wrappers.add(Settings.getMouseXPosWrapper());
+        wrappers.add(Settings.getMouseYPosWrapper());
+        wrappers.add(Settings.getWorldXOffsetWrapper());
+        wrappers.add(Settings.getWorldYOffsetWrapper());
+        wrappers.add(Settings.getZoomXWrapper());
+        wrappers.add(Settings.getZoomYWrapper());
 
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
-        fields.add(new JTextField(14));
+        setLayout(new GridLayout(wrappers.size() + 2, 2));
 
-        setLayout(new GridLayout(labels.size() + 2, 2));
+        wrappers.forEach(wrapper -> {
+            JLabel jLabel = new JLabel(wrapper.getPairedNamed());
+            JTextField jTextField = new JTextField(wrapper.toString());
+            add(jLabel);
+            add(jTextField);
+            coupledPairs.put(jTextField, wrapper);
+        });
 
-        for (int i = 0; i < labels.size(); i++) {
-            add(labels.get(i));
-            add(fields.get(i));
-        }
+
+        coupledPairs.forEach((jTextField, wrapper) -> jTextField.addActionListener(e -> {
+            Settings.setChanged(true);
+
+            String value = jTextField.getText();
+
+            if (wrapper.getValue() instanceof Integer) {
+                Number v = Integer.parseInt(value);
+                wrapper.setValue(v);
+            }
+
+            if (wrapper.getValue() instanceof BigDecimal) {
+                BigDecimal v = new BigDecimal(value);
+                wrapper.setValue(v);
+            }
+
+            System.out.println(Settings.getImageWidth());
+
+
+        }));
 
         new Thread(new MyLoopRunnable() {
             @Override
@@ -67,14 +80,18 @@ public class WestPanel extends MyPanel {
 
             @Override
             protected void toToInLoop() {
-                updateStats();
+                coupledPairs.forEach((textField, wrapper) -> {
+                    if (!textField.hasFocus()) {
+                        textField.setText(MyMath.formatNumber(wrapper.getValue()));
+                    }
+                });
             }
         }).start();
 
 
         BigDecimal[] values = new BigDecimal[1000];
         for (int i = 0; i < values.length; i++) {
-            String value = String.format("%.2f", i * 0.01 - 5).replace(",", ".");
+            String value = String.format("%.2f", (double) i / values.length * 10 - 5).replace(",", ".");
             values[i] = new BigDecimal(value);
         }
 
@@ -84,17 +101,12 @@ public class WestPanel extends MyPanel {
         JPanel numberPanel = new JPanel();
         JSpinner spinner1 = new JSpinner(new SpinnerListModel(values));
         JSpinner spinner2 = new JSpinner(new SpinnerListModel(values));
-        spinner1.setValue(values[500]);
-        spinner2.setValue(values[500]);
+        spinner1.setValue(values[values.length / 2]);
+        spinner2.setValue(values[values.length / 2]);
         numberPanel.add(spinner1);
         numberPanel.add(new JLabel("+"));
         numberPanel.add(spinner2);
         numberPanel.add(new JLabel("*i"));
-
-        add(new JLabel("C is Variable"));
-        add(checkBox);
-        add(new JLabel("Non Variable Value"));
-        add(numberPanel);
 
         checkBox.addActionListener(e -> {
             Settings.setCIsVariable(checkBox.isSelected());
@@ -108,18 +120,12 @@ public class WestPanel extends MyPanel {
         spinner1.addChangeListener(spinnerLister);
         spinner2.addChangeListener(spinnerLister);
 
+
+        add(new JLabel("C is Variable"));
+        add(checkBox);
+        add(new JLabel("Non Variable Value"));
+        add(numberPanel);
+
     }
 
-    private void updateStats() {
-        fields.get(0).setText(String.valueOf(Settings.getPRECISION()));
-        fields.get(1).setText(String.valueOf(Settings.getWIDTH()));
-        fields.get(2).setText(String.valueOf(Settings.getHEIGHT()));
-        fields.get(3).setText(String.valueOf(Settings.getMaxDepth()));
-        fields.get(4).setText(String.valueOf(Settings.getMouseXPos()));
-        fields.get(5).setText(String.valueOf(Settings.getMouseYPos()));
-        fields.get(6).setText(String.valueOf(Settings.getWorldXOffset()));
-        fields.get(7).setText(String.valueOf(Settings.getWorldYOffset()));
-        fields.get(8).setText(MyMath.bigDeziToString(Settings.getZoomX()));
-        fields.get(9).setText(MyMath.bigDeziToString(Settings.getZoomY()));
-    }
 }
