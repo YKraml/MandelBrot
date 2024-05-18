@@ -1,7 +1,7 @@
 package main.java.frame;
 
 import main.java.main.Settings;
-import main.java.model.MyMath;
+import main.java.model.Calculator;
 import main.java.model.MyPoint;
 
 import javax.swing.*;
@@ -9,13 +9,19 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.math.BigDecimal;
 
-public class MyMouseAdapter extends MouseAdapter {
+public class MyMouseAdapter<K extends Number> extends MouseAdapter {
 
 
-    private BigDecimal originalMousePositionX;
-    private BigDecimal originalMousePositionY;
+    private final Calculator<K> calculator;
+    private final Settings<K> settings;
+    private K originalMousePositionX;
+    private K originalMousePositionY;
+
+    public MyMouseAdapter(Calculator<K> calculator, Settings<K> settings) {
+        this.calculator = calculator;
+        this.settings = settings;
+    }
 
 
     @Override
@@ -23,39 +29,38 @@ public class MyMouseAdapter extends MouseAdapter {
 
         if (SwingUtilities.isRightMouseButton(e)) {
 
-            Settings.setChanged(true);
+            settings.setChanged(true);
+            K newOffsetX = calculator.calcOffset(settings.getWorldXOffset(), e.getX(), originalMousePositionX, settings.getZoomX());
+            K newOffsetY = calculator.calcOffset(settings.getWorldYOffset(), e.getY(), originalMousePositionY, settings.getZoomY());
 
-            BigDecimal newOffsetX = Settings.getWorldXOffset().add((BigDecimal.valueOf(e.getX()).subtract(originalMousePositionX)).divide(Settings.getZoomX(), Settings.getMathContext()));
-            BigDecimal newOffsetY = Settings.getWorldYOffset().add((BigDecimal.valueOf(e.getY()).subtract(originalMousePositionY)).divide(Settings.getZoomY(), Settings.getMathContext()));
+            originalMousePositionX = calculator.createNumber(e.getX());
+            originalMousePositionY = calculator.createNumber(e.getY());
 
-            originalMousePositionX = BigDecimal.valueOf(e.getX());
-            originalMousePositionY = BigDecimal.valueOf(e.getY());
-
-            Settings.setWorldXOffset(newOffsetX);
-            Settings.setWorldYOffset(newOffsetY);
+            settings.setWorldXOffset(newOffsetX);
+            settings.setWorldYOffset(newOffsetY);
             return;
         }
 
-        MyPoint point = calcScreenToWorld(e.getPoint());
-        Settings.setMouseXPos(point.getX());
-        Settings.setMouseYPos(point.getY());
+        MyPoint<K> point = calcScreenToWorld(e.getPoint());
+        settings.setMouseXPos(point.getX());
+        settings.setMouseYPos(point.getY());
 
     }
 
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        MyPoint point = calcScreenToWorld(e.getPoint());
-        Settings.setMouseXPos(point.getX());
-        Settings.setMouseYPos(point.getY());
+        MyPoint<K> point = calcScreenToWorld(e.getPoint());
+        settings.setMouseXPos(point.getX());
+        settings.setMouseYPos(point.getY());
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
 
-        MyPoint point = calcScreenToWorld(e.getPoint());
-        Settings.setMouseXPos(point.getX());
-        Settings.setMouseYPos(point.getY());
+        MyPoint<K> point = calcScreenToWorld(e.getPoint());
+        settings.setMouseXPos(point.getX());
+        settings.setMouseYPos(point.getY());
 
     }
 
@@ -63,11 +68,11 @@ public class MyMouseAdapter extends MouseAdapter {
     public void mousePressed(MouseEvent e) {
         super.mousePressed(e);
         if (SwingUtilities.isRightMouseButton(e)) {
-
-            this.originalMousePositionX = new BigDecimal(e.getX());
-            this.originalMousePositionY = new BigDecimal(e.getY());
+            this.originalMousePositionX = calculator.createNumber(e.getX());
+            this.originalMousePositionY = calculator.createNumber(e.getY());
         }
     }
+
 
     @Override
     public void mouseReleased(MouseEvent e) {
@@ -76,37 +81,34 @@ public class MyMouseAdapter extends MouseAdapter {
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-
-        Settings.setChanged(true);
+        settings.setChanged(true);
 
         super.mouseWheelMoved(e);
 
-        MyPoint mousePosBefore = this.calcScreenToWorld(e.getPoint());
+        MyPoint<K> mousePosBefore = this.calcScreenToWorld(e.getPoint());
 
         int rotation = e.getWheelRotation();
         if (rotation < 0) {
-            Settings.setZoomX(Settings.getZoomX().multiply(new BigDecimal("1.2")));
-            Settings.setZoomY(Settings.getZoomY().multiply(new BigDecimal("1.2")));
+            settings.zoomIn();
         } else if (rotation > 0) {
-            Settings.setZoomX(Settings.getZoomX().multiply(new BigDecimal("0.8")));
-            Settings.setZoomY(Settings.getZoomY().multiply(new BigDecimal("0.8")));
+            settings.zoomOut();
         }
-        MyPoint mousePosAfter = this.calcScreenToWorld(e.getPoint());
+        MyPoint<K> mousePosAfter = this.calcScreenToWorld(e.getPoint());
 
-        BigDecimal xVector = mousePosBefore.getX().subtract(mousePosAfter.getX());
-        BigDecimal yVector = mousePosBefore.getY().subtract(mousePosAfter.getY());
+        K xVector = calculator.subtract(mousePosBefore.getX(), mousePosAfter.getX());
+        K yVector = calculator.subtract(mousePosBefore.getY(), mousePosAfter.getY());
 
-        Settings.setWorldXOffset(Settings.getWorldXOffset().subtract(xVector));
-        Settings.setWorldYOffset(Settings.getWorldYOffset().subtract(yVector));
+        settings.reduceXOffset(xVector);
+        settings.reduceYOffset(yVector);
 
-        MyPoint point = calcScreenToWorld(e.getPoint());
-        Settings.setMouseXPos(point.getX());
-        Settings.setMouseYPos(point.getY());
+        MyPoint<K> point = calcScreenToWorld(e.getPoint());
+        settings.setMouseXPos(point.getX());
+        settings.setMouseYPos(point.getY());
     }
 
 
-    private MyPoint calcScreenToWorld(Point screenPoint) {
-        return MyMath.calcScreenToWorld(new MyPoint(BigDecimal.valueOf(screenPoint.getX()), BigDecimal.valueOf(screenPoint.getY())));
+    private MyPoint<K> calcScreenToWorld(Point screenPoint) {
+        return calculator.calcScreenToWorld(calculator.createPoint(calculator.createNumber(screenPoint.getX()), calculator.createNumber(screenPoint.getY())));
     }
 
 }

@@ -8,39 +8,38 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-public class Graph {
+public class Graph<K extends Number> {
 
-    private static final Color[] GRADIANT = new Color[]{
-            new Color(66, 30, 15),
-            new Color(25, 7, 26),
-            new Color(9, 1, 47),
-            new Color(4, 4, 73),
-            new Color(0, 7, 100),
-            new Color(12, 44, 138),
-            new Color(24, 82, 177),
-            new Color(57, 125, 209),
-            new Color(134, 181, 229),
-            new Color(211, 236, 248),
-            new Color(241, 233, 191),
-            new Color(248, 201, 95),
-            new Color(255, 170, 0),
-            new Color(204, 128, 0),
-            new Color(153, 87, 0),
-            new Color(106, 52, 3)
-    };
+    private static final Color[] gradient;
+    private final Calculator<K> calculator;
+    private final Settings<K> settings;
 
-    private int getDepthFrom(ImaginaryNumber startNumber, ImaginaryNumber c) {
 
-        ImaginaryNumber current = startNumber;
-        for (int k = 0; k < Settings.getMaxRecursionDepth(); k++) {
-            current = MyMath.add(MyMath.mult(current, current), c);
+    static {
+        gradient = new Color[10000];
+        for (int i = 0; i < gradient.length; i++) {
+            gradient[i] = new Color((int) (Math.random() * 256), (int) (Math.random() * 256), (int) (Math.random() * 256));
+        }
+    }
+
+    public Graph(Calculator<K> calculator, Settings<K> settings) {
+        this.calculator = calculator;
+        this.settings = settings;
+    }
+
+    private int getDepthFrom(ImaginaryNumber<K> startNumber, ImaginaryNumber<K> c) {
+
+        ImaginaryNumber<K> current = startNumber;
+        for (int k = 0; k < settings.getMaxRecursionDepth(); k++) {
+            current = calculator.add(calculator.multiply(current, current), c);
 
             if (current.getLength().doubleValue() < Math.pow(10, -10)) {
                 return k;
@@ -54,37 +53,38 @@ public class Graph {
         return -1;
     }
 
-    public Color getColorFrom(ImaginaryNumber startNumber, ImaginaryNumber c) {
+    public Color getColorFrom(ImaginaryNumber<K> startNumber, ImaginaryNumber<K> c) {
         int depth = getDepthFrom(c, startNumber);
-        return depth < 0 ? Color.BLACK : GRADIANT[(depth + 2) % GRADIANT.length];
+        return depth < 0 ? Color.BLACK : gradient[(depth + 2) % gradient.length];
     }
 
-    public synchronized void calcImage(BufferedImage image, BigDecimal zoomX, BigDecimal zoomY, BigDecimal worldXOffset, BigDecimal worldYOffset) {
+    public synchronized void calcImage(BufferedImage image) {
 
         AtomicBoolean finishedDrawing = new AtomicBoolean(true);
 
         Set<Point> bigPixels = new HashSet<>();
-        for (int i = 0; i < image.getWidth() / Settings.getBigPixelSize() + 1; i++) {
-            if (Settings.isChanged()) {
+        for (int i = 0; i < image.getWidth() / settings.getBigPixelSize() + 1; i++) {
+            if (settings.isChanged()) {
                 return;
             }
-            for (int j = 0; j < image.getHeight() / Settings.getBigPixelSize() + 1; j++) {
-                bigPixels.add(new Point(i * Settings.getBigPixelSize(), j * Settings.getBigPixelSize()));
+            for (int j = 0; j < image.getHeight() / settings.getBigPixelSize() + 1; j++) {
+                bigPixels.add(new Point(i * settings.getBigPixelSize(), j * settings.getBigPixelSize()));
             }
         }
 
         //Male BigPixels
-        bigPixels.forEach(screenPoint -> {
-            if (Settings.isChanged()) {
+        bigPixels.parallelStream().forEach(screenPoint -> {
+            if (settings.isChanged()) {
                 finishedDrawing.set(false);
                 return;
             }
 
-            MyPoint worldPoint = MyMath.calcScreenToWorld(new MyPoint(screenPoint.x + Settings.getBigPixelSize() * 0.5, screenPoint.y+ Settings.getBigPixelSize() * 0.5));
-            Color color = Settings.isCVariable() ? getColorFrom(worldPoint.toImaginaryNumber(), Settings.getNonVariable()) : getColorFrom(Settings.getNonVariable(), worldPoint.toImaginaryNumber());
+            MyPoint<K> myPoint = calculator.createPoint(screenPoint.x, screenPoint.y);
+            MyPoint<K> worldPoint = calculator.calcScreenToWorld(myPoint);
+            Color color = settings.isCVariable() ? getColorFrom(worldPoint.toImaginaryNumber(), settings.getNonVariable()) : getColorFrom(settings.getNonVariable(), worldPoint.toImaginaryNumber());
 
-            for (int i = 0; i < Settings.getBigPixelSize(); i++) {
-                for (int j = 0; j < Settings.getBigPixelSize(); j++) {
+            for (int i = 0; i < settings.getBigPixelSize(); i++) {
+                for (int j = 0; j < settings.getBigPixelSize(); j++) {
                     int pixelX = screenPoint.x + i;
                     int pixelY = screenPoint.y + j;
                     if (pixelX < image.getWidth() && pixelY < image.getHeight() && pixelX >= 0 && pixelY >= 0) {
@@ -95,14 +95,14 @@ public class Graph {
         });
 
         //Finde BigPixels, die neu gemalt werden müssen.
-        Set<Point> bigPixelsToBeRedrawn = bigPixels.stream().filter(screenPoint -> {
+        Set<Point> bigPixelsToBeRedrawn = bigPixels.parallelStream().filter(screenPoint -> {
             Point[] bigPixelNeighbors = new Point[]{
-                    new Point(screenPoint.x - Settings.getBigPixelSize(), screenPoint.y - Settings.getBigPixelSize()), new Point(screenPoint.x, screenPoint.y - Settings.getBigPixelSize()), new Point(screenPoint.x + Settings.getBigPixelSize(), screenPoint.y - Settings.getBigPixelSize()),
-                    new Point(screenPoint.x - Settings.getBigPixelSize(), screenPoint.y), new Point(screenPoint.x, screenPoint.y), new Point(screenPoint.x + Settings.getBigPixelSize(), screenPoint.y),
-                    new Point(screenPoint.x - Settings.getBigPixelSize(), screenPoint.y + Settings.getBigPixelSize()), new Point(screenPoint.x, screenPoint.y + Settings.getBigPixelSize()), new Point(screenPoint.x + Settings.getBigPixelSize(), screenPoint.y + Settings.getBigPixelSize())
+                    new Point(screenPoint.x - settings.getBigPixelSize(), screenPoint.y - settings.getBigPixelSize()), new Point(screenPoint.x, screenPoint.y - settings.getBigPixelSize()), new Point(screenPoint.x + settings.getBigPixelSize(), screenPoint.y - settings.getBigPixelSize()),
+                    new Point(screenPoint.x - settings.getBigPixelSize(), screenPoint.y), new Point(screenPoint.x, screenPoint.y), new Point(screenPoint.x + settings.getBigPixelSize(), screenPoint.y),
+                    new Point(screenPoint.x - settings.getBigPixelSize(), screenPoint.y + settings.getBigPixelSize()), new Point(screenPoint.x, screenPoint.y + settings.getBigPixelSize()), new Point(screenPoint.x + settings.getBigPixelSize(), screenPoint.y + settings.getBigPixelSize())
             };
 
-            Set<Integer> neighboringColors = new LinkedHashSet<>();
+            Set<Integer> neighboringColors = new HashSet<>();
             if (screenPoint.x < image.getWidth() && screenPoint.y < image.getHeight() && screenPoint.x >= 0 && screenPoint.y >= 0) {
                 neighboringColors.add(image.getRGB(screenPoint.x, screenPoint.y));
             }
@@ -122,26 +122,45 @@ public class Graph {
 
         //Male gewisse BigPixels neu.
         bigPixelsToBeRedrawn.parallelStream().forEach(bigPixel -> {
-            if (Settings.isChanged()) {
-                finishedDrawing.set(false);
-                return;
-            }
-
-            for (int k = 0; k < Settings.getBigPixelSize() * Settings.getBigPixelSize(); k++) {
-                Point screenPoint = new Point(bigPixel.x + k / Settings.getBigPixelSize(), bigPixel.y + k % Settings.getBigPixelSize());
-                MyPoint worldPoint = MyMath.calcScreenToWorld(MyPoint.valueOf(screenPoint));
-                Color color = Settings.isCVariable() ? getColorFrom(worldPoint.toImaginaryNumber(), Settings.getNonVariable()) : getColorFrom(Settings.getNonVariable(), worldPoint.toImaginaryNumber());
-
-                if (screenPoint.x < image.getWidth() && screenPoint.y < image.getHeight() && screenPoint.x >= 0 && screenPoint.y >= 0) {
-                    image.setRGB(screenPoint.x, screenPoint.y, color.getRGB());
-                }
-            }
+            Runnable runnable = () -> draw(image, bigPixel, finishedDrawing);
+            wait(runnable);
         });
 
         if (finishedDrawing.get()) {
-            addImageToHistoryAndSaveToDrive(image);
+            System.out.println("Finished");
+            //CompletableFuture.runAsync(() -> addImageToHistoryAndSaveToDrive(image));
         }
 
+    }
+
+
+    private void draw(BufferedImage image, Point bigPixel, AtomicBoolean finishedDrawing) {
+        if (settings.isChanged()) {
+            finishedDrawing.set(false);
+            return;
+        }
+
+        for (int k = 0; k < settings.getBigPixelSize() * settings.getBigPixelSize(); k++) {
+            Point screenPoint = new Point(bigPixel.x + k / settings.getBigPixelSize(), bigPixel.y + k % settings.getBigPixelSize());
+            MyPoint<K> worldPoint = calculator.calcScreenToWorld(calculator.valueOf(screenPoint));
+            Color color = settings.isCVariable() ? getColorFrom(worldPoint.toImaginaryNumber(), settings.getNonVariable()) : getColorFrom(settings.getNonVariable(), worldPoint.toImaginaryNumber());
+
+            if (screenPoint.x < image.getWidth() && screenPoint.y < image.getHeight() && screenPoint.x >= 0 && screenPoint.y >= 0) {
+                image.setRGB(screenPoint.x, screenPoint.y, color.getRGB());
+            }
+        }
+    }
+
+    private static void wait(Runnable runnable) {
+        try {
+            CompletableFuture.runAsync(runnable)
+                    .orTimeout(60, TimeUnit.SECONDS)
+                    .exceptionally(throwable -> {
+                        System.out.println("An error occurred");
+                        return null;
+                    }).get();
+        } catch (InterruptedException | ExecutionException ignored) {
+        }
     }
 
     private void addImageToHistoryAndSaveToDrive(BufferedImage image) {
@@ -156,19 +175,19 @@ public class Graph {
     private void saveImage(BufferedImage bufferedImage) {
         new Thread(() -> {
             File outputfile = new File("images/mandelbrot_"
-                    + Settings.getImageWidth()
+                    + settings.getImageWidth()
                     + "x"
-                    + Settings.getImageHeight()
+                    + settings.getImageHeight()
                     + "_"
-                    + MyMath.formatNumber(Settings.getWorldXOffset())
+                    + calculator.formatNumber(settings.getWorldXOffset())
                     + "_"
-                    + MyMath.formatNumber(Settings.getWorldYOffset())
+                    + calculator.formatNumber(settings.getWorldYOffset())
                     + "_"
-                    + MyMath.formatNumber(Settings.getZoomX())
+                    + calculator.formatNumber(settings.getZoomX())
                     + "_"
-                    + Settings.isCVariable()
+                    + settings.isCVariable()
                     + "_"
-                    + Settings.getNonVariable()
+                    + settings.getNonVariable()
                     + ".png");
             try {
                 if (!outputfile.exists()) {

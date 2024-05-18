@@ -2,190 +2,96 @@ package main.java.main;
 
 import main.java.model.ImaginaryNumber;
 
-import java.math.BigDecimal;
 import java.math.MathContext;
 
-public class Settings {
+public interface Settings<K extends Number> {
+    int getPrecision();
 
-    private static final Wrapper<Integer> precision = Wrapper.valueOf(25, "Precision");
-    private static final Wrapper<Integer> maxRecursionDepth = Wrapper.valueOf(100, "Max Recursion Depth");
+    void setPrecision(int precision);
 
-    private static final Wrapper<Integer> imageWidth = Wrapper.valueOf(700, "Image Width");
-    private static final Wrapper<Integer> imageHeight = Wrapper.valueOf(500, "Image Height");
+    int getMaxRecursionDepth();
 
-    private static final Wrapper<Integer> bigPixelSize = Wrapper.valueOf((imageWidth.getValue() + imageHeight.getValue()) / 200, "Pre Render Size");
+    void setMaxRecursionDepth(int maxRecursionDepth);
 
-    private static final Wrapper<BigDecimal> mouseXPos = Wrapper.valueOf(BigDecimal.ZERO, "Mouse X Pos");
-    private static final Wrapper<BigDecimal> mouseYPos = Wrapper.valueOf(BigDecimal.ZERO, "Mouse Y Pos");
+    MathContext getMathContext();
 
-    private static final Wrapper<BigDecimal> zoomX = Wrapper.valueOf(new BigDecimal(imageWidth.getValue() / 4), "Zoom X");
-    private static final Wrapper<BigDecimal> zoomY = Wrapper.valueOf(zoomX.getValue(), "Zoom Y");
+    int getImageWidth();
 
-    private static final Wrapper<BigDecimal> worldXOffset = Wrapper.valueOf(BigDecimal.valueOf(imageWidth.getValue() / zoomX.getValue().doubleValue() / 2), "World X Offset");
-    private static final Wrapper<BigDecimal> worldYOffset = Wrapper.valueOf(BigDecimal.valueOf(imageHeight.getValue() / zoomY.getValue().doubleValue() / 2), "World X Offset");
+    void setImageWidth(int imageWidth);
 
-    private static boolean changed = true;
+    int getImageHeight();
 
+    void setImageHeight(int imageHeight);
 
-    private static boolean cIsVariable = true;
-    private static ImaginaryNumber nonVariable = new ImaginaryNumber(0, 0);
+    K getMouseXPos();
 
+    void setMouseXPos(K mouseXPos);
 
-    public static int getPrecision() {
-        return precision.getValue();
-    }
+    K getMouseYPos();
 
-    public static int getMaxRecursionDepth() {
-        return maxRecursionDepth.getValue();
-    }
+    void setMouseYPos(K mouseYPos);
 
-    public static MathContext getMathContext() {
-        return new MathContext(precision.getValue());
-    }
+    K getZoomX();
 
-    public static int getImageWidth() {
-        return imageWidth.getValue();
-    }
+    void setZoomX(K zoomX);
 
-    public static int getImageHeight() {
-        return imageHeight.getValue();
-    }
+    K getZoomY();
 
-    public static BigDecimal getMouseXPos() {
-        return mouseXPos.getValue();
-    }
+    void setZoomY(K zoomY);
 
-    public static BigDecimal getMouseYPos() {
-        return mouseYPos.getValue();
-    }
+    K getWorldXOffset();
 
-    public static BigDecimal getZoomX() {
-        return zoomX.getValue();
-    }
+    void setWorldXOffset(K worldXOffset);
 
-    public static BigDecimal getZoomY() {
-        return zoomY.getValue();
-    }
+    K getWorldYOffset();
 
-    public static BigDecimal getWorldXOffset() {
-        return worldXOffset.getValue();
-    }
+    void setWorldYOffset(K worldYOffset);
 
-    public static BigDecimal getWorldYOffset() {
-        return worldYOffset.getValue();
-    }
+    boolean isChanged();
 
-    public static boolean isChanged() {
-        return changed;
-    }
+    void setChanged(boolean changed);
 
-    public static int getBigPixelSize() {
-        return bigPixelSize.getValue();
-    }
+    int getBigPixelSize();
 
-    public static boolean isCVariable() {
-        return cIsVariable;
-    }
+    boolean isCVariable();
 
-    public static ImaginaryNumber getNonVariable() {
-        return nonVariable;
-    }
+    ImaginaryNumber<K> getNonVariable();
 
-    public static void setPrecision(int precision) {
-        Settings.precision.setValue(precision);
-    }
+    void setNonVariable(ImaginaryNumber<K> nonVariable);
 
-    public static void setMaxRecursionDepth(int maxRecursionDepth) {
-        Settings.maxRecursionDepth.setValue(maxRecursionDepth);
-    }
+    void setCIsVariable(boolean cIsVariable);
 
-    public static void setImageWidth(int imageWidth) {
-        Settings.imageWidth.setValue(imageWidth);
-    }
+    Wrapper<Integer> getPrecisionWrapper();
 
-    public static void setImageHeight(int imageHeight) {
-        Settings.imageHeight.setValue(imageHeight);
-    }
+    Wrapper<Integer> getMaxRecursionDepthWrapper();
 
-    public static void setMouseXPos(BigDecimal mouseXPos) {
-        Settings.mouseXPos.setValue(mouseXPos);
-    }
+    Wrapper<Integer> getImageWidthWrapper();
 
-    public static void setMouseYPos(BigDecimal mouseYPos) {
-        Settings.mouseYPos.setValue(mouseYPos);
-    }
+    Wrapper<Integer> getImageHeightWrapper();
 
-    public static void setZoomX(BigDecimal zoomX) {
-        Settings.zoomX.setValue(zoomX);
-    }
+    Wrapper<Integer> getBigPixelSizeWrapper();
 
-    public static void setZoomY(BigDecimal zoomY) {
-        Settings.zoomY.setValue(zoomY);
-    }
+    Wrapper<K> getMouseXPosWrapper();
 
-    public static void setWorldXOffset(BigDecimal worldXOffset) {
-        Settings.worldXOffset.setValue(worldXOffset);
-    }
+    Wrapper<K> getMouseYPosWrapper();
 
-    public static void setWorldYOffset(BigDecimal worldYOffset) {
-        Settings.worldYOffset.setValue(worldYOffset);
-    }
+    Wrapper<K> getWorldXOffsetWrapper();
 
-    public static void setChanged(boolean changed) {
-        Settings.changed = changed;
-    }
+    Wrapper<K> getWorldYOffsetWrapper();
 
-    public static void setCIsVariable(boolean cIsVariable) {
-        Settings.cIsVariable = cIsVariable;
-    }
+    Wrapper<K> getZoomXWrapper();
 
-    public static void setNonVariable(ImaginaryNumber nonVariable) {
-        Settings.nonVariable = nonVariable;
-    }
+    Wrapper<K> getZoomYWrapper();
 
+    void zoomIn();
 
-    public static Wrapper<Integer> getPrecisionWrapper() {
-        return precision;
-    }
+    void zoomOut();
 
-    public static Wrapper<Integer> getMaxRecursionDepthWrapper() {
-        return maxRecursionDepth;
-    }
+    void reduceXOffset(K xVector);
 
-    public static Wrapper<Integer> getImageWidthWrapper() {
-        return imageWidth;
-    }
+    void reduceYOffset(K yVector);
 
-    public static Wrapper<Integer> getImageHeightWrapper() {
-        return imageHeight;
-    }
+    boolean isUseLargeDoubles();
 
-    public static Wrapper<Integer> getBigPixelSizeWrapper() {
-        return bigPixelSize;
-    }
-
-    public static Wrapper<BigDecimal> getMouseXPosWrapper() {
-        return mouseXPos;
-    }
-
-    public static Wrapper<BigDecimal> getMouseYPosWrapper() {
-        return mouseYPos;
-    }
-
-    public static Wrapper<BigDecimal> getWorldXOffsetWrapper() {
-        return worldXOffset;
-    }
-
-    public static Wrapper<BigDecimal> getWorldYOffsetWrapper() {
-        return worldYOffset;
-    }
-
-    public static Wrapper<BigDecimal> getZoomXWrapper() {
-        return zoomX;
-    }
-
-    public static Wrapper<BigDecimal> getZoomYWrapper() {
-        return zoomY;
-    }
-
+    void setUseLargeDoubles(boolean useLargeDoubles);
 }

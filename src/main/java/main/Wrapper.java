@@ -14,12 +14,16 @@ public class Wrapper<K extends Number> {
         this(value, "NO NAME");
     }
 
-    public void setValue(K value) {
-        this.value = value;
+    public static <T extends Number> Wrapper<T> valueOf(T value, String pairedNamed) {
+        return new Wrapper<>(value, pairedNamed);
     }
 
     public K getValue() {
         return value;
+    }
+
+    public void setValue(K value) {
+        this.value = value;
     }
 
     @Override
@@ -29,13 +33,5 @@ public class Wrapper<K extends Number> {
 
     public String getPairedNamed() {
         return pairedNamed;
-    }
-
-    public static <T extends Number> Wrapper<T> valueOf(T value, String pairedNamed) {
-        return new Wrapper<>(value, pairedNamed);
-    }
-
-    public static <T extends Number> Wrapper<T> valueOf(T value) {
-        return new Wrapper<>(value);
     }
 }

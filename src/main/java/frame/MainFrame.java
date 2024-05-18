@@ -1,7 +1,6 @@
 package main.java.frame;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class MainFrame extends JFrame {
 
@@ -15,7 +14,7 @@ public class MainFrame extends JFrame {
         this.setAlwaysOnTop(ALWAYS_ON_TOP);
     }
 
-    public void setVisible(){
+    public void setVisible() {
         this.setVisible(VISIBILITY);
     }
 

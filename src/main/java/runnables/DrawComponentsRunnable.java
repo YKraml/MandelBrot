@@ -1,7 +1,5 @@
 package main.java.runnables;
 
-import main.java.main.Main;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.Collection;

@@ -2,8 +2,8 @@ package main.java.frame;
 
 import main.java.main.Settings;
 import main.java.main.Wrapper;
-import main.java.model.ImaginaryNumber;
-import main.java.model.MyMath;
+import main.java.model.Calculator;
+import main.java.model.ImaginaryNumberBigDecimal;
 import main.java.runnables.MyLoopRunnable;
 
 import javax.swing.*;
@@ -19,7 +19,12 @@ public class WestPanel extends MyPanel {
     private final List<Wrapper> wrappers;
     private final Map<JTextField, Wrapper> coupledPairs;
 
-    public WestPanel() {
+    private final Calculator calculator;
+    private final Settings settings;
+
+    public WestPanel(Calculator calculator, Settings settings) {
+        this.calculator = calculator;
+        this.settings = settings;
         wrappers = Collections.synchronizedList(new ArrayList<>());
         coupledPairs = Collections.synchronizedMap(new HashMap<>());
     }
@@ -27,21 +32,21 @@ public class WestPanel extends MyPanel {
     @Override
     protected void init() {
 
-        setBorder(new TitledBorder("Settings"));
+        setBorder(new TitledBorder("settings"));
         setBackground(Color.white);
 
-        wrappers.add(Settings.getImageWidthWrapper());
-        wrappers.add(Settings.getImageHeightWrapper());
-        wrappers.add(Settings.getPrecisionWrapper());
-        wrappers.add(Settings.getMaxRecursionDepthWrapper());
-        wrappers.add(Settings.getMouseXPosWrapper());
-        wrappers.add(Settings.getMouseYPosWrapper());
-        wrappers.add(Settings.getWorldXOffsetWrapper());
-        wrappers.add(Settings.getWorldYOffsetWrapper());
-        wrappers.add(Settings.getZoomXWrapper());
-        wrappers.add(Settings.getZoomYWrapper());
+        wrappers.add(settings.getImageWidthWrapper());
+        wrappers.add(settings.getImageHeightWrapper());
+        wrappers.add(settings.getPrecisionWrapper());
+        wrappers.add(settings.getMaxRecursionDepthWrapper());
+        wrappers.add(settings.getMouseXPosWrapper());
+        wrappers.add(settings.getMouseYPosWrapper());
+        wrappers.add(settings.getWorldXOffsetWrapper());
+        wrappers.add(settings.getWorldYOffsetWrapper());
+        wrappers.add(settings.getZoomXWrapper());
+        wrappers.add(settings.getZoomYWrapper());
 
-        setLayout(new GridLayout(wrappers.size() + 2, 2));
+        setLayout(new GridLayout(wrappers.size() + 3, 2));
 
         wrappers.forEach(wrapper -> {
             JLabel jLabel = new JLabel(wrapper.getPairedNamed());
@@ -53,7 +58,7 @@ public class WestPanel extends MyPanel {
 
 
         coupledPairs.forEach((jTextField, wrapper) -> jTextField.addActionListener(e -> {
-            Settings.setChanged(true);
+            settings.setChanged(true);
 
             String value = jTextField.getText();
 
@@ -67,7 +72,7 @@ public class WestPanel extends MyPanel {
                 wrapper.setValue(v);
             }
 
-            System.out.println(Settings.getImageWidth());
+            System.out.println(settings.getImageWidth());
 
 
         }));
@@ -82,7 +87,7 @@ public class WestPanel extends MyPanel {
             protected void toToInLoop() {
                 coupledPairs.forEach((textField, wrapper) -> {
                     if (!textField.hasFocus()) {
-                        textField.setText(MyMath.formatNumber(wrapper.getValue()));
+                        textField.setText(calculator.formatNumber(wrapper.getValue()));
                     }
                 });
             }
@@ -96,8 +101,10 @@ public class WestPanel extends MyPanel {
         }
 
 
-        JCheckBox checkBox = new JCheckBox();
-        checkBox.setSelected(true);
+        JCheckBox checkBox1 = new JCheckBox();
+        checkBox1.setSelected(true);
+        JCheckBox checkBox2 = new JCheckBox();
+        checkBox1.setSelected(false);
         JPanel numberPanel = new JPanel();
         JSpinner spinner1 = new JSpinner(new SpinnerListModel(values));
         JSpinner spinner2 = new JSpinner(new SpinnerListModel(values));
@@ -108,23 +115,30 @@ public class WestPanel extends MyPanel {
         numberPanel.add(spinner2);
         numberPanel.add(new JLabel("*i"));
 
-        checkBox.addActionListener(e -> {
-            Settings.setCIsVariable(checkBox.isSelected());
-            Settings.setChanged(true);
+        checkBox1.addActionListener(e -> {
+            settings.setCIsVariable(checkBox1.isSelected());
+            settings.setChanged(true);
+        });
+
+        checkBox2.addActionListener(e -> {
+            settings.setUseLargeDoubles(checkBox2.isSelected());
+            settings.setChanged(true);
         });
 
         ChangeListener spinnerLister = e -> {
-            Settings.setNonVariable(new ImaginaryNumber((BigDecimal) spinner1.getValue(), (BigDecimal) spinner2.getValue()));
-            Settings.setChanged(true);
+            settings.setNonVariable(new ImaginaryNumberBigDecimal((BigDecimal) spinner1.getValue(), (BigDecimal) spinner2.getValue(), settings));
+            settings.setChanged(true);
         };
         spinner1.addChangeListener(spinnerLister);
         spinner2.addChangeListener(spinnerLister);
 
 
         add(new JLabel("C is Variable"));
-        add(checkBox);
+        add(checkBox1);
         add(new JLabel("Non Variable Value"));
         add(numberPanel);
+        add(new JLabel("Use large doubles"));
+        add(checkBox2);
 
     }
 

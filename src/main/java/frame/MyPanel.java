@@ -1,7 +1,9 @@
 package main.java.frame;
 
 import javax.swing.*;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
 public abstract class MyPanel extends JPanel {
 
