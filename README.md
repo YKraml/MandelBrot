@@ -1,6 +1,4 @@
 # MandelBrot
- Eine Visualisierung der Mandelbrotmenge und anderer Rekursiv definierten Mengen.
- 
-Es handelt sich hier um ein IntelliJ Projekt.
-Bei Bedarf können die Klassen auch einfach rauskopiert werden.
-Alles basiert ausschließlich auf Java.
+A visualization of the Mandelbrot set and other recursively defined sets.
+
+This is an IntelliJ project. If necessary, the classes can also be easily copied out. Everything is based exclusively on Java.
